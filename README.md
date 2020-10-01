@@ -55,10 +55,12 @@
     針對下列均衡化函式，
     <br><div align=center><img width="300" src="https://github.com/minyaho/Histogram-Equalization-by-Parallel-Computing/blob/master/readme_images/04.png"/></div>  <br>
     設計下方程式碼對應。
-    
-      sum = round(cdf_R[IObj->sR[index]] - minCdfValue_R)/(2048*2048 - minCdfValue_R)*(255);
-      sum = ((sum>255) ? 255 : ((sum<0) ? 0 : sum));
-      IObj->sR[index] = (unsigned)sum;
+
+    ```C++
+    sum = round(cdf_R[IObj->sR[index]] - minCdfValue_R)/(2048*2048 - minCdfValue_R)*(255);
+    sum = ((sum>255) ? 255 : ((sum<0) ? 0 : sum));
+    IObj->sR[index] = (unsigned)sum;
+    ```
 
 <br>  
 
@@ -66,10 +68,41 @@
 
     下方的程式碼由於需疊代的次數與影像的大小相關，若圖像大小為 2048 x 2048，那麼此段程式碼共疊代 4,192,256 ‬次。且此段程式碼不具有資料相依性，也就是這段函數的輸入並沒有上一次自己的輸出。此外這些程式碼的負擔較重，需要疊代、載入、浮點運算與判斷。而且不只有 RGB 影像通道中的 R 通道要均衡化、G 與 B 通道也是。
 
-      for(y=1; y!=IMG_H; y++){
-        index = y*IMG_W;
-        for(x=1; x!=IMG_W; x++){
 
+	```c++
+    for(y=1; y!=IMG_H; y++){
+    index = y*IMG_W;
+    for(x=1; x!=IMG_W; x++){
+
+      sum = round(cdf_R[IObj->sR[index]] - minCdfValue_R) / (2048*2048 - minCdfValue_R) * (255);
+      sum = ((sum>255) ? 255 : ((sum<0) ? 0 : sum));
+      IObj->sR[index] = (unsigned)sum;
+
+      sum = round(cdf_G[IObj->sG[index]] - minCdfValue_G) / (2048*2048 - minCdfValue_G) * (255);
+      sum = ((sum>255) ? 255 : ((sum<0) ? 0 : sum));
+      IObj->sG[index] = (unsigned)sum;
+
+      sum = round(cdf_B[IObj->sB[index]] - minCdfValue_B) / (2048*2048 - minCdfValue_B) * (255);
+      sum = ((sum>255) ? 255 : ((sum<0) ? 0 : sum));
+      IObj->sB[index] = (unsigned)sum;
+      index++;
+      }
+    }
+	```
+
+<br>  
+
+ * 平化程式碼片段 - OpenMP  
+ 
+    OpenMP 是借助 CPU 的 thread 優勢來達到平行化加速。根據應平行化的程式片段改寫成 OpenMP 可平行化運行的片段，
+    
+    ```c++
+    #pragma omp parallel num_threads(maxThread)
+    {
+      #pragma omp for schedule(dynamic,20) private(y,x,index,sum)
+      for(y=1; y<IMG_H; y++){
+        index = y*IMG_W;
+        for(x=1; x<IMG_W; x++){
           sum = round(cdf_R[IObj->sR[index]] - minCdfValue_R) / (2048*2048 - minCdfValue_R) * (255);
           sum = ((sum>255) ? 255 : ((sum<0) ? 0 : sum));
           IObj->sR[index] = (unsigned)sum;
@@ -82,46 +115,24 @@
           sum = ((sum>255) ? 255 : ((sum<0) ? 0 : sum));
           IObj->sB[index] = (unsigned)sum;
           index++;
-          }
-      }
-
-<br>  
-
- * 平化程式碼片段 - OpenMP  
- 
-    OpenMP 是借助 CPU 的 thread 優勢來達到平行化加速。根據應平行化的程式片段改寫成 OpenMP 可平行化運行的片段，
-
-        #pragma omp parallel num_threads(maxThread)
-        {
-          #pragma omp for schedule(dynamic,20) private(y,x,index,sum)
-          for(y=1; y<IMG_H; y++){
-            index = y*IMG_W;
-            for(x=1; x<IMG_W; x++){
-              sum = round(cdf_R[IObj->sR[index]] - minCdfValue_R) / (2048*2048 - minCdfValue_R) * (255);
-              sum = ((sum>255) ? 255 : ((sum<0) ? 0 : sum));
-              IObj->sR[index] = (unsigned)sum;
-
-              sum = round(cdf_G[IObj->sG[index]] - minCdfValue_G) / (2048*2048 - minCdfValue_G) * (255);
-              sum = ((sum>255) ? 255 : ((sum<0) ? 0 : sum));
-              IObj->sG[index] = (unsigned)sum;
-
-              sum = round(cdf_B[IObj->sB[index]] - minCdfValue_B) / (2048*2048 - minCdfValue_B) * (255);
-              sum = ((sum>255) ? 255 : ((sum<0) ? 0 : sum));
-              IObj->sB[index] = (unsigned)sum;
-              index++;
-            }
-          }
         }
+      }
+    }
+    ```
 
     上述的程式碼相較應平行化的程式碼多出 OpenMP 語法的部分，分別是
     
-        #pragma omp parallel num_threads(maxThread) { }
-        
+    ```c++
+    #pragma omp parallel num_threads(maxThread) { }
+    ```
+    
     其宣告括號內的 { } 程式碼片段，以 maxThread 的數量進行平行化運算。而 maxThread 為 CPU 的硬體 Thread 量，其為可調動之參數，不同的 CPU 有不同的硬體 thread 數量，可視資源量自行調動，但最高不能超過硬體上的 thread 量。<br>  
     
     此外還有
-    
-        #pragma omp for schedule(dynamic,20) private(y,x,index,sum)
+
+    ```c++
+    #pragma omp for schedule(dynamic,20) private(y,x,index,sum)
+    ```
 
     其宣告括號內的 { } 程式碼片段，將會反覆地進行疊代，而每個 thread 將會份配到 20 份工作量（一次疊代視為一次工作量），而分配工作量的順序將會視 thread 的完成速度動態調整。此外每個 thread 將獲得專屬的 private 變數。
 
