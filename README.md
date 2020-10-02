@@ -134,8 +134,27 @@
     #pragma omp for schedule(dynamic,20) private(y,x,index,sum)
     ```
 
-    其宣告括號內的 { } 程式碼片段，將會反覆地進行疊代，而每個 thread 將會份配到 20 份工作量（一次疊代視為一次工作量），而分配工作量的順序將會視 thread 的完成速度動態調整。此外每個 thread 將獲得專屬的 private 變數。
+    其宣告括號內的 { } 程式碼片段，將會反覆地進行疊代，而每個 thread 將會份配到 20 份工作量（一次疊代視為一次工作量），而分配工作量的順序將會視 thread 的完成速度動態調整。此外每個 thread 將獲得專屬的 private 變數。<br>  
+    
+    本次 OpenCL 採用 2 維的全域工作大小 global_work_size，讓每份工作（ＷorkItem）以類二維矩陣的模式排列，使其發揮 GPU 的運算潛能，而這 2 維分別對應著影像的 column 與 row 。此外將每份工作所需的資料預先載入 GPU 的內存中，以便運算時快速使用，不須要再從主記憶體讀取，更能加快運算的速度。<br>  
 
+### 實驗結果：
 
+* 測試環境
+	* 作業系統： Windows 10, 版本 1809
+	* CPU： Intel Core i7 7700HQ 2.80GHz
+	* GPU：NVIDIA GTX 1060 版本 CUDA 10
+
+* 測試方法
+	* 共分為單線程CPU、OpenMP、OpenCL，這 3 個測試項目
+	* 每個測試項目共測試 2 張圖片
+	* 每張照片各別測試 5 次並取平均
+	* 因此每個測項共有 10 次的測試
+	
+* 測試資料
+
+	|圖片A 風景照|圖片B 貓咪照|
+	| - | - |
+	|<img width="200" src="https://github.com/minyaho/Histogram-Equalization-by-Parallel-Computing/blob/master/readme_images/05.png"/>|<img width="200" src="https://github.com/minyaho/Histogram-Equalization-by-Parallel-Computing/blob/master/readme_images/06.png"/>|
 
 
