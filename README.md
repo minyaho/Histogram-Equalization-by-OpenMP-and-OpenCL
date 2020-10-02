@@ -141,11 +141,13 @@
 ### 實驗結果：
 
 * 測試環境
+
 	* 作業系統： Windows 10, 版本 1809
 	* CPU： Intel Core i7 7700HQ 2.80GHz
 	* GPU：NVIDIA GTX 1060 版本 CUDA 10
 
 * 測試方法
+
 	* 共分為單線程CPU、OpenMP、OpenCL，這 3 個測試項目
 	* 每個測試項目共測試 2 張圖片
 	* 每張照片各別測試 5 次並取平均
@@ -153,8 +155,54 @@
 	
 * 測試資料
 
+	以下 2 張圖片為測試資料，
 	|圖片A 風景照|圖片B 貓咪照|
 	| - | - |
 	|<img width="200" src="https://github.com/minyaho/Histogram-Equalization-by-Parallel-Computing/blob/master/readme_images/05.png"/>|<img width="200" src="https://github.com/minyaho/Histogram-Equalization-by-Parallel-Computing/blob/master/readme_images/06.png"/>|
+	
+* 測試結果
+
+	* 圖片A 測試結果
+
+	|單線程CPU|OpenMP|OpenCL|
+	| - | - | - |
+	|<img width="150" src="https://github.com/minyaho/Histogram-Equalization-by-Parallel-Computing/blob/master/readme_images/07.png"/>|<img width="150" src="https://github.com/minyaho/Histogram-Equalization-by-Parallel-Computing/blob/master/readme_images/08.png"/>|<img width="150" src="https://github.com/minyaho/Histogram-Equalization-by-Parallel-Computing/blob/master/readme_images/09.png"/>|
+	
+	* 圖片B 測試結果
+
+	|單線程CPU|OpenMP|OpenCL|
+	| - | - | - |
+	|<img width="150" src="https://github.com/minyaho/Histogram-Equalization-by-Parallel-Computing/blob/master/readme_images/10.png"/>|<img width="150" src="https://github.com/minyaho/Histogram-Equalization-by-Parallel-Computing/blob/master/readme_images/11.png"/>|<img width="150" src="https://github.com/minyaho/Histogram-Equalization-by-Parallel-Computing/blob/master/readme_images/12.png"/>|
+
+	* 圖片A 測試結果
+
+	|測項|第一次|第二次|第三次|第四次|第五次|平均|
+	| - | - | - | -	| - | -	| - |
+	|單線程|0.12822|0.12559|0.12834|0.12366|0.12672|0.12651|
+	|OpenMP|0.02385|0.02817|0.02309|0.02346|0.02369|0.02445|
+	|OpenCL|0.00327|0.00424|0.00319|0.00356|0.00344|**0.00354**|
+
+	* 圖片A 比較運算速度提升 （以單線程為基準）
+
+	|測項|單線程|OpenMP|OpenCL|
+	|:-:|:-:|:-:|:-:|
+	|比值|1|5.17|**35.34**|
+
+	* 圖片B 測試結果
+
+	|測項|第一次|第二次|第三次|第四次|第五次|平均|
+	| - | - | - | -	| - | -	| - |
+	|單線程|0.12732|0.12588|0.13413|0.12093|0.12864|0.12738|
+	|OpenMP|0.02771|0.02379|0.02415|0.02335|0.02287|0.02437|
+	|OpenCL|0.00312|0.00317|0.00309|0.00319|0.0035|**0.00321**|
 
 
+	* 圖片B 比較運算速度提升 （以單線程為基準）
+
+	|測項|單線程|OpenMP|OpenCL|
+	|:-:|:-:|:-:|:-:|
+	|比值|1|5.23|**39.68**|
+	
+### 結論：
+
+以單線程為比較的基準，可以發現 OpenMP 是其的約 5 倍快，而 OpenCL 是其的約 35 倍快。其中可以得知 OpenCL 的平行化加速是最快的。這可能要歸功於 GPU 的運算單元遠遠比起 CPU 來的多且 GPU 的內存頻寬較大，有更快的讀取與寫入速度。雖然如此其實還是有很多東西無法進行 GPU 的平行化。因此 GPU 與CPU彼此之間還是需要互相並行，各司其職，才能創造出更大的優勢。
